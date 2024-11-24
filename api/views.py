@@ -75,7 +75,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
     # Custom action to add product images
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post', 'get'], permission_classes=[IsAuthenticated])
     def add_image(self, request, pk=None):
         product = self.get_object()
         serializer = ProductImageSerializer(data=request.data)
@@ -131,7 +131,7 @@ class CartViewSet(viewsets.ModelViewSet):
         return Response({"message": "No cart found to delete"}, status=status.HTTP_404_NOT_FOUND)
 
     # Checkout action, only available to authenticated users
-    @action(detail=False, methods=['post'], url_path='checkout')
+    @action(detail=False, methods=['post', 'get'], url_path='checkout')
     def checkout(self, request):
         # Retrieve the user's cart
         cart = Cart.objects.filter(user=request.user).first()
