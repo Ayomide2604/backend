@@ -11,6 +11,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from . serializers import *
 from .filters import ProductFilter
+from rest_framework.views import APIView
 
 
 # Create your views here.
