@@ -1,3 +1,7 @@
+from .serializers import CartSerializer
+from .models import Cart
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, status
 from django.shortcuts import render
 from .models import *
 from rest_framework.viewsets import ModelViewSet
@@ -27,19 +31,42 @@ class ProductViewSet(ModelViewSet):
     permission_classes = [AllowAny]
 
 
-class CartViewSet(ModelViewSet):
+class CartViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
+    serializer_class = CartSerializer  # Specify the serializer to be used
 
     def list(self, request):
-        cart, created = Cart.objects.get_or_create(user=request.user)
-        serializer = CartSerializer(cart)
-        return Response(serializer.data)
+        # Check if the user has an existing cart
+        cart = Cart.objects.filter(user=request.user).first()
 
-    def destroy(self, request):
+        # If a cart exists, return it, otherwise create a new one and return that
+        if cart:
+            serializer = CartSerializer(cart)
+            return Response(serializer.data)
+
+        # If no cart exists, create a new one and return the new cart details
+        cart = Cart.objects.create(user=request.user)
+        serializer = CartSerializer(cart)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def create(self, request, *args, **kwargs):
+        # Ensure a cart does not exist already before creating one
+        if Cart.objects.filter(user=request.user).exists():
+            return Response({"message": "Cart already exists. You can only have one cart."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # If no cart exists, create a new one
+        cart = Cart.objects.create(user=request.user)
+        serializer = CartSerializer(cart)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, *args, **kwargs):
+        # Only allow deleting the user's cart
         cart = Cart.objects.filter(user=request.user).first()
         if cart:
             cart.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "No cart found to delete"}, status=status.HTTP_404_NOT_FOUND)
 
 
 class CartItemViewSet(ModelViewSet):
@@ -63,7 +90,8 @@ class OrderViewSet(ModelViewSet):
         if not cart:
             return Response({"error": "No active cart found."}, status=status.HTTP_400_BAD_REQUEST)
 
-        order = Order.objects.create(user=request.user, payment_status="PENDING")
+        order = Order.objects.create(
+            user=request.user, payment_status="PENDING")
         for cart_item in cart.cart_items.all():
             OrderItem.objects.create(
                 order=order,

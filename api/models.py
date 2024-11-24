@@ -1,4 +1,5 @@
 from django.db import models
+import uuid
 from django.core.validators import MinValueValidator
 from django.contrib.auth.models import User
 
@@ -38,11 +39,16 @@ class Profile(models.Model):
 
 
 class Cart(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,
+                          editable=False)  # UUID for Cart
     user = models.OneToOneField(User, on_delete=models.CASCADE, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def total_price(self):
-        return sum(item.product.price * item.quantity for item in self.cartitem_set.all())
+        return sum(item.product.price * item.quantity for item in self.cart_items.all())
+
+    def __str__(self):
+        return f"Cart for {self.user}"
 
 
 class CartItem(models.Model):
@@ -51,8 +57,13 @@ class CartItem(models.Model):
     product = models.ForeignKey("Product", on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
 
+    def __str__(self):
+        return f"Order for {self.user.username}"
+
 
 class Order(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4,
+                          editable=False)  # UUID for Order
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     payment_status = models.CharField(max_length=20, choices=[
@@ -61,9 +72,15 @@ class Order(models.Model):
         ('FAILED', 'Failed')
     ], default='PENDING')
 
+    def __str__(self):
+        return f"Order for {self.user} with status {self.payment_status}"
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(
         Order, on_delete=models.CASCADE, related_name="order_items")
     product = models.ForeignKey("Product", on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f"{self.quantity} x {self.product.name}"
