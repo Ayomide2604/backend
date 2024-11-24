@@ -20,9 +20,6 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'collection', 'price']
 
 
-
-from rest_framework import serializers
-
 class CartSerializer(serializers.ModelSerializer):
     total_price = serializers.SerializerMethodField()
     cart_items = serializers.SerializerMethodField()
@@ -38,6 +35,7 @@ class CartSerializer(serializers.ModelSerializer):
         from .serializers import CartItemSerializer
         return CartItemSerializer(obj.cart_items.all(), many=True).data
 
+
 class CartItemSerializer(serializers.ModelSerializer):
     product_name = serializers.ReadOnlyField(source="product.name")
     product_price = serializers.ReadOnlyField(source="product.price")
@@ -45,3 +43,15 @@ class CartItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = CartItem
         fields = ['id', 'product', 'product_name', 'product_price', 'quantity']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    order_items = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Order
+        fields = ['id', 'created_at', 'payment_status', 'order_items']
+
+    def get_order_items(self, obj):
+        from .serializers import OrderItemSerializer
+        return OrderItemSerializer(obj.order_items.all(), many=True).data
