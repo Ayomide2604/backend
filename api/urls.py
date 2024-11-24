@@ -7,6 +7,6 @@ router.register('collections', views.CollectionViewSet)
 
 
 urlpatterns = [
-    path('api/', include(router.urls)),
+    path('', include(router.urls)),
 
 ]
