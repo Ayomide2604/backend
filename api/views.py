@@ -68,6 +68,15 @@ class ProductViewSet(viewsets.ModelViewSet):
             'total_price': total_price
         }, status=status.HTTP_200_OK)
 
+    @action(detail=True, methods=['post'], url_path='add-image')
+    def add_image(self, request, pk=None):
+        product = self.get_object()
+        serializer = ProductImageSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(product=product)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class CartViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
