@@ -16,10 +16,11 @@ from .filters import ProductFilter
 # Create your views here.
 
 
-class CollectionViewSet(ModelViewSet):
+# CollectionViewSet - Allow anyone to view collections
+class CollectionViewSet(viewsets.ModelViewSet):
     queryset = Collection.objects.all()
     serializer_class = CollectionSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [AllowAny]  # Everyone can view collections
     search_fields = ['name']
     ordering_fields = ['name']
 
@@ -29,23 +30,28 @@ class CollectionViewSet(ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
+# ProductViewSet - Allow anyone to view products, only authenticated users can add to cart
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]  # Everyone can view products
     filterset_class = ProductFilter
     search_fields = ['name', 'collection__name']
     ordering_fields = ['price', 'name', 'date_created']
     ordering = ['name']  # default ordering
 
-    # Custom action to add product to cart
-    @action(detail=True, methods=['post', 'get'])
+    # Custom action to add product to cart - Check if user is authenticated
+    @action(detail=True, methods=['post', 'get'], permission_classes=[AllowAny])
     def add_to_cart(self, request, pk=None):
         product = self.get_object()
-        user = request.user
+        user = request.user if request.user.is_authenticated else None
 
-        # Get the user's cart or create a new one if it doesn't exist
-        cart, created = Cart.objects.get_or_create(user=user)
+        # If the user is authenticated, get or create their cart, else work with anonymous cart
+        if user:
+            cart, created = Cart.objects.get_or_create(user=user)
+        else:
+            # Handle anonymous cart here if needed (you can use session or IP-based storage)
+            return Response({"error": "Please login to add products to your cart."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if the product is already in the cart
         cart_item, cart_item_created = CartItem.objects.get_or_create(
@@ -57,18 +63,18 @@ class ProductViewSet(viewsets.ModelViewSet):
             cart_item.quantity += 1
             cart_item.save()
 
-        # Calculate total price of cart items (optional, if needed for the response)
-        total_price = cart.total_price()
-
         # Serialize and return the updated cart
         cart_serializer = CartSerializer(cart)
+        # Assuming a total_price method is implemented on Cart
+        total_price = cart.total_price()
         return Response({
             'message': 'Product added to cart',
             'cart': cart_serializer.data,
             'total_price': total_price
         }, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post'], url_path='add-image')
+    # Custom action to add product images
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def add_image(self, request, pk=None):
         product = self.get_object()
         serializer = ProductImageSerializer(data=request.data)
@@ -78,12 +84,14 @@ class ProductViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# CartViewSet - Only authenticated users can place an order
 class CartViewSet(viewsets.ModelViewSet):
+    # Only authenticated users can interact with cart
     permission_classes = [IsAuthenticated]
     serializer_class = CartSerializer
 
     def get_queryset(self):
-        # Ensures a user can only access their own cart
+        # Ensure the user can only access their own cart
         return Cart.objects.filter(user=self.request.user)
 
     def list(self, request):
@@ -121,7 +129,8 @@ class CartViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response({"message": "No cart found to delete"}, status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=False, methods=['post', 'get'], url_path='checkout')
+    # Checkout action, only available to authenticated users
+    @action(detail=False, methods=['post'], url_path='checkout')
     def checkout(self, request):
         # Retrieve the user's cart
         cart = Cart.objects.filter(user=request.user).first()
