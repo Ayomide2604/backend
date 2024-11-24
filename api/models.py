@@ -52,14 +52,14 @@ class CartItem(models.Model):
     quantity = models.PositiveIntegerField(default=1)
 
 
-# class Order(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     created_at = models.DateTimeField(auto_now_add=True)
-#     payment_status = models.CharField(max_length=20, choices=[
-#         ('PENDING', 'Pending'),
-#         ('COMPLETED', 'Completed'),
-#         ('FAILED', 'Failed')
-#     ], default='PENDING')
+class Order(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    payment_status = models.CharField(max_length=20, choices=[
+        ('PENDING', 'Pending'),
+        ('COMPLETED', 'Completed'),
+        ('FAILED', 'Failed')
+    ], default='PENDING')
 
 
 # class OrderItem(models.Model):
