@@ -45,11 +45,11 @@ class Cart(models.Model):
         return sum(item.product.price * item.quantity for item in self.cartitem_set.all())
 
 
-# class CartItem(models.Model):
-#     cart = models.ForeignKey(
-#         Cart, on_delete=models.CASCADE, related_name="cart_items")
-#     product = models.ForeignKey("Product", on_delete=models.CASCADE)
-#     quantity = models.PositiveIntegerField(default=1)
+class CartItem(models.Model):
+    cart = models.ForeignKey(
+        Cart, on_delete=models.CASCADE, related_name="cart_items")
+    product = models.ForeignKey("Product", on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
 
 
 # class Order(models.Model):
