@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from .models import Collection, Product, Cart
+from .models import *
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -40,3 +40,16 @@ class CartViewSet(ModelViewSet):
         if cart:
             cart.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CartItemViewSet(ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CartItemSerializer
+
+    def get_queryset(self):
+        cart, created = Cart.objects.get_or_create(user=self.request.user)
+        return CartItem.objects.filter(cart=cart)
+
+    def perform_create(self, serializer):
+        cart, created = Cart.objects.get_or_create(user=self.request.user)
+        serializer.save(cart=cart)
