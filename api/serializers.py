@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, Collection, Cart, CartItem, Order, OrderItem
+from .models import *
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -13,11 +13,18 @@ class CollectionSerializer(serializers.ModelSerializer):
         return obj.products.count()
 
 
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image', 'uploaded_at']
+
+
 class ProductSerializer(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'collection', 'price']
+        fields = ['id', 'name', 'collection', 'price', 'images']
 
 
 class CartSerializer(serializers.ModelSerializer):
