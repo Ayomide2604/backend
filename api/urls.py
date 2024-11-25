@@ -1,5 +1,6 @@
 from django.urls import path, include
 from rest_framework import routers
+from rest_framework_nested import routers
 from .views import *
 
 # Initialize the router
@@ -12,9 +13,16 @@ router.register('carts', CartViewSet, basename='cart')
 router.register('cart-items', CartItemViewSet, basename='cart-item')
 router.register('orders', OrderViewSet, basename='order')
 
+
+# Register Nested Routers here
+product_router = routers.NestedDefaultRouter(
+    router, 'products', lookup='product')
+product_router.register('images', ProductImageViewSet,
+                        basename='product-images')
 # Define the URL patterns
 urlpatterns = [
     path('', include(router.urls)),
+    path('', include(product_router.urls)),
 
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
