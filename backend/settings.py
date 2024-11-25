@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework_simplejwt',
     'djoser',
+    "corsheaders",
     'api',
 ]
 
@@ -39,6 +40,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -164,3 +166,10 @@ DJOSER = {
     # 'LOGIN_FIELD': 'email',
     # 'SEND_ACTIVATION_EMAIL': True,
 }
+
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+
+]
