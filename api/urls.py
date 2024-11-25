@@ -20,9 +20,8 @@ router.register('orders', OrderViewSet, basename='order')
 urlpatterns = [
     path('', include(router.urls)),
 
-    # JWT authentication token endpoints
-    path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('auth/', include('djoser.urls')),
+    path('auth/', include('djoser.urls.jwt')),
 
     # Custom URLs for Cart and Order retrieval/deletion
     path('cart/<uuid:pk>/',

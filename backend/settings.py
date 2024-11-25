@@ -29,8 +29,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
-    'rest_framework_simplejwt',
     'django_filters',
+    'rest_framework_simplejwt',
+    'djoser',
     'api',
 ]
 
@@ -150,4 +151,11 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     # Update the last login field of a user
     'UPDATE_LAST_LOGIN': True,
+}
+
+
+DJOSER = {
+    'USER_ID_FIELD': 'id',
+    # 'LOGIN_FIELD': 'email',
+    # 'SEND_ACTIVATION_EMAIL': True,
 }
