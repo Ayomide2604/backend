@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.decorators import action
 from . serializers import *
 from .filters import ProductFilter
-from rest_framework.views import APIView
+from rest_framework.exceptions import NotFound
 
 
 # Create your views here.
@@ -96,7 +96,6 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 
 class ProductImageViewSet(viewsets.ModelViewSet):
-    queryset = ProductImage.objects.all()
     serializer_class = ProductImageSerializer
 
     def get_permissions(self):
@@ -104,11 +103,21 @@ class ProductImageViewSet(viewsets.ModelViewSet):
             # Only staff and superusers can create/update/delete
             self.permission_classes = [IsAdminUser]
         else:
-            # Other actions like view are accessible by authenticated users
+            # Other actions like view are accessible by any user
             self.permission_classes = [AllowAny]
         return super().get_permissions()
 
+    def get_queryset(self):
+        # Filter the images for the product based on 'product_pk'
+        product_id = self.kwargs.get('product_pk')
+        try:
+            product = Product.objects.get(id=product_id)
+        except Product.DoesNotExist:
+            raise NotFound("Product not found.")
+        return ProductImage.objects.filter(product=product)
+
     def perform_create(self, serializer):
+        # Associate the product with the image being created
         product = Product.objects.get(id=self.kwargs['product_pk'])
         serializer.save(product=product)
 
