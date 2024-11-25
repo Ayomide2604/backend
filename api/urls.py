@@ -1,9 +1,5 @@
 from django.urls import path, include
-from django.conf import settings
-from django.conf.urls.static import static
 from rest_framework import routers
-from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
-
 from .views import *
 
 # Initialize the router
@@ -29,4 +25,4 @@ urlpatterns = [
     path('order/<uuid:pk>/', OrderViewSet.as_view(
         {'get': 'retrieve', 'delete': 'destroy'}), name='order-detail'),
 
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
