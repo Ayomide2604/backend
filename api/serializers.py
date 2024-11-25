@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from djoser.serializers import UserSerializer as BaseUserSerializer
 from .models import *
 
 
@@ -98,3 +99,9 @@ class OrderItemSerializer(serializers.ModelSerializer):
     def get_total_price(self, obj):
         # Calculate total price for each order item
         return obj.product.price * obj.quantity
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['bio', 'avatar', 'phone', 'address']
