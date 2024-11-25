@@ -1,11 +1,10 @@
 from .serializers import CartSerializer
 from .models import Cart
-from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, status
 from django.shortcuts import render
 from .models import *
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
@@ -41,7 +40,14 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering_fields = ['price', 'name', 'date_created']
     ordering = ['name']  # default ordering
 
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            # Only staff and superusers can create, update, or delete
+            return [IsAdminUser()]
+        return [AllowAny()]  # Anyone can view products
+
     # Custom action to add product to cart - Check if user is authenticated
+
     @action(detail=True, methods=['post', 'get'], permission_classes=[AllowAny])
     def add_to_cart(self, request, pk=None):
         product = self.get_object()
@@ -75,7 +81,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         }, status=status.HTTP_200_OK)
 
     # Custom action to add product images
-    @action(detail=True, methods=['post', 'get'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post', 'get'], permission_classes=[IsAdminUser])
     def add_image(self, request, pk=None):
         product = self.get_object()
         serializer = ProductImageSerializer(data=request.data)
@@ -83,6 +89,26 @@ class ProductViewSet(viewsets.ModelViewSet):
             serializer.save(product=product)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ProductImageViewSet(viewsets.ModelViewSet):
+    queryset = ProductImage.objects.all()
+    serializer_class = ProductImageSerializer
+    # Make sure the user is authenticated
+    permission_classes = [AllowAny]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            # Only staff and superusers can create/update/delete
+            self.permission_classes = [IsAdminUser]
+        else:
+            # Other actions like view are accessible by authenticated users
+            self.permission_classes = [AllowAny]
+        return super().get_permissions()
+
+    def perform_create(self, serializer):
+        product = Product.objects.get(id=self.kwargs['product_pk'])
+        serializer.save(product=product)
 
 
 # CartViewSet - Only authenticated users can place an order
