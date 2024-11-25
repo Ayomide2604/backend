@@ -155,6 +155,11 @@ SIMPLE_JWT = {
 
 
 DJOSER = {
+    'SERIALIZERS': {
+        'user': 'your_app.serializers.CustomUserSerializer',
+        'current_user': 'your_app.serializers.CustomUserSerializer',
+    },
+
     'USER_ID_FIELD': 'id',
     # 'LOGIN_FIELD': 'email',
     # 'SEND_ACTIVATION_EMAIL': True,

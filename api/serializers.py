@@ -104,4 +104,21 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        fields = ['bio', 'avatar', 'phone', 'address']
+        fields = ['name', 'bio', 'avatar', 'phone', 'address']
+
+
+class CustomUserSerializer(BaseUserSerializer):
+    profile = ProfileSerializer()
+
+    class Meta(BaseUserSerializer.Meta):
+        fields = BaseUserSerializer.Meta.fields + ('profile',)
+
+    def update(self, instance, validated_data):
+        # Handle profile update
+        profile_data = validated_data.pop('profile', None)
+        if profile_data:
+            profile, created = Profile.objects.get_or_create(user=instance)
+            for key, value in profile_data.items():
+                setattr(profile, key, value)
+            profile.save()
+        return super().update(instance, validated_data)
