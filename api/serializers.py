@@ -17,7 +17,7 @@ class CollectionSerializer(serializers.ModelSerializer):
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
-        fields = ['id', 'image']
+        fields = ['id', 'image', 'uploaded_at']
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -72,10 +72,11 @@ class CartSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     order_items = serializers.SerializerMethodField()
     total_price = serializers.SerializerMethodField()
+    user = serializers.ReadOnlyField(source="user.username")
 
     class Meta:
         model = Order
-        fields = ['id', 'created_at', 'payment_status',
+        fields = ['id', 'user', 'created_at', 'payment_status',
                   'order_items', 'total_price']
 
     def get_order_items(self, obj):

@@ -20,9 +20,14 @@ from rest_framework.views import APIView
 class CollectionViewSet(viewsets.ModelViewSet):
     queryset = Collection.objects.all()
     serializer_class = CollectionSerializer
-    permission_classes = [AllowAny]  # Everyone can view collections
     search_fields = ['name']
     ordering_fields = ['name']
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            # Only staff and superusers can create, update, or delete
+            return [IsAdminUser()]
+        return [AllowAny()]  # Anyone can view products
 
     def destroy(self, request, *args, **kwargs):
         if Product.objects.filter(collection_id=kwargs['pk']):
@@ -34,7 +39,6 @@ class CollectionViewSet(viewsets.ModelViewSet):
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [AllowAny]  # Everyone can view products
     filterset_class = ProductFilter
     search_fields = ['name', 'collection__name']
     ordering_fields = ['price', 'name', 'date_created']
@@ -94,8 +98,6 @@ class ProductViewSet(viewsets.ModelViewSet):
 class ProductImageViewSet(viewsets.ModelViewSet):
     queryset = ProductImage.objects.all()
     serializer_class = ProductImageSerializer
-    # Make sure the user is authenticated
-    permission_classes = [AllowAny]
 
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
@@ -209,24 +211,60 @@ class CartItemViewSet(ModelViewSet):
 
 
 class OrderViewSet(viewsets.ModelViewSet):
-    queryset = Order.objects.all()  # Queryset to use for the viewset
-    serializer_class = OrderSerializer  # Specify the serializer to use
+    serializer_class = OrderSerializer
     # Only authenticated users can access this viewset
     permission_classes = [IsAuthenticated]
+    ordering = ['created_at']
+
+    def get_permissions(self):
+        if self.action in ['create']:
+            # Only authenticated users can create orders
+            return [IsAuthenticated()]
+        elif self.action in ['list', 'retrieve']:
+            # Admin users can see all orders
+            if self.request.user.is_staff:
+                return [IsAdminUser()]
+            # Non-admin users can only view their own orders
+            return [IsAuthenticated()]
+        return [IsAuthenticated()]  # Default permission for other actions
+
+    def get_queryset(self):
+        """
+        Custom queryset for viewing orders:
+        - Admin can see all orders.
+        - Authenticated users can only see their own orders.
+        """
+        if self.request.user.is_staff:
+            return Order.objects.all()  # Admin users can see all orders
+        # Users can only see their own orders
+        return Order.objects.filter(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
+        # Ensure the user is authenticated
+        if not request.user.is_authenticated:
+            return Response({"error": "You must be logged in to create an order."},
+                            status=status.HTTP_401_UNAUTHORIZED)
+
+        # Check if the user has an active cart
         cart = Cart.objects.filter(user=request.user).first()
         if not cart:
             return Response({"error": "No active cart found."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # Create the order
         order = Order.objects.create(
             user=request.user, payment_status="PENDING")
+
+        # Create order items from the cart
         for cart_item in cart.cart_items.all():
             OrderItem.objects.create(
                 order=order,
                 product=cart_item.product,
                 quantity=cart_item.quantity
             )
+
+        # Once the order is created, delete the cart
         cart.delete()
+
+        # Serialize and return the created order
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
