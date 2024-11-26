@@ -28,6 +28,12 @@ class ProductSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'collection', 'price', 'images']
 
 
+class SimpleProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'price', 'collection', 'images']
+
+
 class CartSerializer(serializers.ModelSerializer):
     total_price = serializers.SerializerMethodField()
     cart_items = serializers.SerializerMethodField()
@@ -46,6 +52,7 @@ class CartSerializer(serializers.ModelSerializer):
 
 class CartItemSerializer(serializers.ModelSerializer):
     total_price = serializers.SerializerMethodField()
+    product = SimpleProductSerializer(read_only=True)
 
     class Meta:
         model = CartItem
