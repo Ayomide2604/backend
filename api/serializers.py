@@ -15,9 +15,10 @@ class CollectionSerializer(serializers.ModelSerializer):
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = ProductImage
-        fields = ['id', 'image', 'uploaded_at', 'product']
+        fields = ['id', 'image', ]
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -29,9 +30,11 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class SimpleProductSerializer(serializers.ModelSerializer):
+    collection = CollectionSerializer()
+
     class Meta:
         model = Product
-        fields = ['id', 'name', 'price', 'collection', 'images']
+        fields = ['id', 'name', 'price', 'collection']
 
 
 class CartSerializer(serializers.ModelSerializer):
@@ -53,14 +56,24 @@ class CartSerializer(serializers.ModelSerializer):
 class CartItemSerializer(serializers.ModelSerializer):
     total_price = serializers.SerializerMethodField()
     product = SimpleProductSerializer(read_only=True)
+    product_image = serializers.SerializerMethodField()
 
     class Meta:
         model = CartItem
-        fields = ['product', 'quantity', 'total_price']
+        fields = ['product', 'quantity', 'total_price', 'product_image']
 
     def get_total_price(self, obj):
         # Calculate total price for each cart item (product price * quantity)
         return obj.product.price * obj.quantity
+
+    def get_product_image(self, obj):
+        # Assuming product has a related field 'images' and we fetch the first image
+        if obj.product.images.exists():
+            first_image = obj.product.images.first().image.url
+            # Append the localhost API URL to the image path
+            return f"http://127.0.0.1:8000{first_image}"
+        # Fallback if no image exists
+        return None
 
 
 class CartSerializer(serializers.ModelSerializer):

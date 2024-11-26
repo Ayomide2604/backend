@@ -10,7 +10,6 @@ router = routers.DefaultRouter()
 router.register('products', ProductViewSet, basename='products')
 router.register('collections', CollectionViewSet, basename='collections')
 router.register('carts', CartViewSet, basename='cart')
-router.register('cart-items', CartItemViewSet, basename='cart-item')
 router.register('orders', OrderViewSet, basename='order')
 
 
@@ -19,10 +18,14 @@ product_router = routers.NestedDefaultRouter(
     router, 'products', lookup='product')
 product_router.register('images', ProductImageViewSet,
                         basename='product-images')
+
+cart_router = routers.NestedDefaultRouter(router, 'carts', lookup='cart')
+cart_router.register('items', CartItemViewSet, basename='cart-items')
 # Define the URL patterns
 urlpatterns = [
     path('', include(router.urls)),
     path('', include(product_router.urls)),
+    path('', include(cart_router.urls)),
 
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
