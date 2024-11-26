@@ -218,6 +218,37 @@ class CartItemViewSet(ModelViewSet):
         cart, created = Cart.objects.get_or_create(user=self.request.user)
         serializer.save(cart=cart)
 
+    @action(detail=True, methods=['patch', 'get'], url_path='increment')
+    def increment(self, request, pk=None, cart_pk=None):
+        try:
+            cart_item = self.get_object()
+            cart_item.quantity += 1
+            cart_item.save()
+            return Response({
+                'message': 'Item quantity incremented successfully',
+                'item': CartItemSerializer(cart_item).data
+            }, status=status.HTTP_200_OK)
+        except CartItem.DoesNotExist:
+            return Response({'error': 'Item not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['patch', 'get'], url_path='decrement')
+    def decrement(self, request, pk=None, cart_pk=None):
+        try:
+            cart_item = self.get_object()
+            if cart_item.quantity > 1:
+                cart_item.quantity -= 1
+                cart_item.save()
+                return Response({
+                    'message': 'Item quantity decremented successfully',
+                    'item': CartItemSerializer(cart_item).data
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({
+                    'error': 'Cannot decrement below 1'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        except CartItem.DoesNotExist:
+            return Response({'error': 'Item not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 class OrderViewSet(viewsets.ModelViewSet):
     serializer_class = OrderSerializer

@@ -35,5 +35,9 @@ urlpatterns = [
          CartViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}), name='cart-detail'),
     path('order/<uuid:pk>/', OrderViewSet.as_view(
         {'get': 'retrieve', 'delete': 'destroy'}), name='order-detail'),
+    path('api/carts/<cart_pk>/items/<item_pk>/increment/',
+         CartItemViewSet.as_view({'get': 'increment'})),
+
+
 
 ]
